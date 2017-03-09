@@ -1,0 +1,69 @@
+#!/bin/bash
+
+state=$(gsettings get org.gnome.system.proxy mode)
+res=false 
+if [ "$state" == "'manual'" ]; then
+	res=true
+fi
+
+#if no parameter then display
+if [ "$#" == "0" ]; then
+	env | grep -i "proxy"
+	
+elif [ "$1" == "-help" ] || [ "$1" == "-h" ];then
+	echo "Usage: sproxy <on|off|t> <proxy server address> <proxy port>"
+
+else
+	
+	#if off option
+	if [ "${1^^}" == "OFF" ]; then
+		gsettings set org.gnome.system.proxy mode 'none'
+		res=false
+		
+	#if on option
+	elif [ "${1^^}" == "ON" ]; then
+		gsettings set org.gnome.system.proxy mode 'manual'
+		gsettings set org.gnome.system.proxy.http enabled true
+		gsettings set org.gnome.system.proxy use-same-proxy true
+		gsettings set org.gnome.system.proxy ignore-hosts "['localhost',  '127.0.0.1', '::1', ':::1']"
+		res=true
+		
+	#toggle option
+	elif [ "${1^^}" == "TOGGLE" ] || [ "${1^^}" == "T" ]; then
+		if $res; then
+        gsettings set org.gnome.system.proxy mode 'none'
+		else
+    	    gsettings set org.gnome.system.proxy mode 'manual'
+		fi
+	#toggle res		
+		if $res; then 
+			res=false 
+		else 
+			res=true 
+		fi
+
+	fi
+	
+	#configure
+	if [ $# -gt 1 ];then
+		gsettings set org.gnome.system.proxy.http host "$2"
+		gsettings set org.gnome.system.proxy.https host "$2"
+		gsettings set org.gnome.system.proxy.ftp host "$2"
+		gsettings set org.gnome.system.proxy.socks host "$2"
+		if [ $# -gt 2 ]; then
+			gsettings set org.gnome.system.proxy.http port "$3"
+			gsettings set org.gnome.system.proxy.https port "$3"
+			gsettings set org.gnome.system.proxy.ftp port "$3"
+			gsettings set org.gnome.system.proxy.socks port "$3"
+		fi
+		echo "Settings Changed!"
+	fi
+fi
+
+
+#print result
+if $res; then
+	echo "Proxy Set!"
+else
+	echo "Proxy Removed!"
+fi
